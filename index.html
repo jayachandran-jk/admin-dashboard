@@ -1,136 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Civic Issue Admin Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; display: flex; background: #f5f7fa; }
+  <head>
+    <meta charset="UTF-8" />
+    <title>Civic Issue Admin Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        display: flex;
+        background: #f5f7fa;
+      }
 
-    /* Sidebar */
-    .sidebar { width: 220px; background: #2c3e50; color: white; height: 100vh; position: fixed; left: 0; top: 0; padding-top: 20px; }
-    .sidebar h2 { text-align: center; margin-bottom: 20px; }
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar ul li { padding: 15px; cursor: pointer; transition: background 0.3s; }
-    .sidebar ul li:hover { background: #34495e; }
+      /* Sidebar */
+      .sidebar {
+        width: 220px;
+        background: #2c3e50;
+        color: white;
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        padding-top: 20px;
+      }
+      .sidebar h2 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .sidebar ul {
+        list-style: none;
+        padding: 0;
+      }
+      .sidebar ul li {
+        padding: 15px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .sidebar ul li:hover {
+        background: #34495e;
+      }
 
-    /* Main content */
-    .main { margin-left: 220px; flex-grow: 1; padding: 20px; }
-    header { background: #3498db; color: #fff; padding: 15px; border-radius: 10px; text-align: center; }
-    .dashboard { display: flex; justify-content: space-around; margin-top: 20px; }
-    .card { background: #fff; padding: 20px; width: 30%; text-align: center; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .heatmap, table { margin-top: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-    th { background: #3498db; color: #fff; }
-    img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; }
-    button { padding: 5px 10px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #2ecc71; }
-  </style>
-</head>
-<body>
-
-<!-- Sidebar -->
-<div class="sidebar">
-  <h2>Admin</h2>
-  <ul>
-    <li onclick="showSection('dashboard')">Dashboard</li>
-    <li onclick="showSection('current')">Current Issues</li>
-    <li onclick="showSection('resolved')">Resolved Issues</li>
-    <li onclick="showSection('reports')">Reports</li>
-    <li onclick="showSection('settings')">Settings</li>
-    <li onclick="logout()">Logout</li>
-  </ul>
-</div>
-
-<!-- Main Content -->
-<div class="main">
-  <header>
-    <h1>Civic Issue Reporting - Admin Dashboard</h1>
-  </header>
-
-  <!-- Dashboard Section -->
-  <section id="dashboardSection">
-    <div class="dashboard">
-      <div class="card">
-        <h2>Total Problems Filed</h2>
-        <p id="totalProblems">0</p>
-      </div>
-      <div class="card">
-        <h2>Active Problems</h2>
-        <p id="activeProblems">0</p>
-      </div>
-      <div class="card">
-        <h2>Issues Solved</h2>
-        <p id="issuesSolved">0</p>
-      </div>
+      /* Main content */
+      .main {
+        margin-left: 220px;
+        flex-grow: 1;
+        padding: 20px;
+      }
+      header {
+        background: #3498db;
+        color: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+      }
+      .dashboard {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+      }
+      .card {
+        background: #fff;
+        padding: 20px;
+        width: 30%;
+        text-align: center;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .heatmap,
+      table {
+        margin-top: 20px;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background: #3498db;
+        color: #fff;
+      }
+      img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 5px;
+      }
+      button {
+        padding: 5px 10px;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2ecc71;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>Admin</h2>
+      <ul>
+        <li onclick="showSection('dashboard')">Dashboard</li>
+        <li onclick="showSection('current')">Current Issues</li>
+        <li onclick="showSection('resolved')">Resolved Issues</li>
+        <li onclick="showSection('reports')">Reports</li>
+        <li onclick="showSection('settings')">Settings</li>
+        <li onclick="logout()">Logout</li>
+      </ul>
     </div>
 
-    <div class="heatmap">
-      <h2>Heatmap of Reported Issues</h2>
-      <canvas id="heatmapChart"></canvas>
+    <!-- Main Content -->
+    <div class="main">
+      <header>
+        <h1>Civic Issue Reporting - Admin Dashboard</h1>
+      </header>
+
+      <!-- Dashboard Section -->
+      <section id="dashboardSection">
+        <div class="dashboard">
+          <div class="card">
+            <h2>Total Problems Filed</h2>
+            <p id="totalProblems">0</p>
+          </div>
+          <div class="card">
+            <h2>Active Problems</h2>
+            <p id="activeProblems">0</p>
+          </div>
+          <div class="card">
+            <h2>Issues Solved</h2>
+            <p id="issuesSolved">0</p>
+          </div>
+        </div>
+
+        <div class="heatmap">
+          <h2>Heatmap of Reported Issues</h2>
+          <canvas id="heatmapChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Current Issues Section -->
+      <section id="currentSection" style="display: none">
+        <h2>Current Issues</h2>
+        <table id="issuesTable">
+          <thead>
+            <tr>
+              <th>Person ID</th>
+              <th>Problem ID</th>
+              <th>Date/Time</th>
+              <th>Location</th>
+              <th>Problem Type</th>
+              <th>Urgency</th>
+              <th>Description</th>
+              <th>Image</th>
+            </tr>
+          </thead>
+          <tbody id="issuesTableBody"></tbody>
+        </table>
+      </section>
+
+      <!-- Placeholder Sections -->
+      <section id="resolvedSection" style="display: none">
+        <h2>Resolved Issues</h2>
+        <p>Coming soon...</p>
+      </section>
+      <section id="reportsSection" style="display: none">
+        <h2>Reports</h2>
+        <p>Coming soon...</p>
+      </section>
+      <section id="settingsSection" style="display: none">
+        <h2>Settings</h2>
+        <p>Coming soon...</p>
+      </section>
     </div>
-  </section>
 
-  <!-- Current Issues Section -->
-  <section id="currentSection" style="display:none;">
-    <h2>Current Issues</h2>
-    <table id="issuesTable">
-      <thead>
-        <tr>
-          <th>Person ID</th>
-          <th>Problem ID</th>
-          <th>Date/Time</th>
-          <th>Location</th>
-          <th>Problem Type</th>
-          <th>Urgency</th>
-          <th>Description</th>
-          <th>Image</th>
-        </tr>
-      </thead>
-      <tbody id="issuesTableBody"></tbody>
-    </table>
-  </section>
+    <!-- JS Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js"></script>
 
-  <!-- Placeholder Sections -->
-  <section id="resolvedSection" style="display:none;"><h2>Resolved Issues</h2><p>Coming soon...</p></section>
-  <section id="reportsSection" style="display:none;"><h2>Reports</h2><p>Coming soon...</p></section>
-  <section id="settingsSection" style="display:none;"><h2>Settings</h2><p>Coming soon...</p></section>
-</div>
+    <script>
+      // Supabase setup
+      const SUPABASE_URL = "https://nnguxuuoxsrxadniklus.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_n56HeJO1Y9dQq7ENsdNMXg_6geyi7p1";
+      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-<!-- JS Libraries -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js"></script>
+      // Section navigation
+      function showSection(section) {
+        ["dashboard", "current", "resolved", "reports", "settings"].forEach(
+          (id) => {
+            document.getElementById(id + "Section").style.display = "none";
+          }
+        );
+        document.getElementById(section + "Section").style.display = "block";
+      }
+      function logout() {
+        alert("Logging out...");
+      }
 
-<script>
-  // Supabase setup
-  const SUPABASE_URL = "https://nnguxuuoxsrxadniklus.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZ3V4dXVveHNyeGFkbmlrbHVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMzMxNzQsImV4cCI6MjA3MzgwOTE3NH0.lKDEDRfsUqPq9vS9p4MooIMJyWZYDWaHlzpWMtXNCNI";
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      // Load issues from Supabase
+      async function loadIssues() {
+        const { data: issues, error } = await supabase
+          .from("issues")
+          .select("*");
+        if (error) {
+          console.error(error);
+          return;
+        }
 
-  // Section navigation
-  function showSection(section) {
-    ["dashboard","current","resolved","reports","settings"].forEach(id=>{
-      document.getElementById(id+"Section").style.display="none";
-    });
-    document.getElementById(section+"Section").style.display="block";
-  }
-  function logout(){ alert("Logging out..."); }
+        // Dashboard counts
+        document.getElementById("totalProblems").textContent = issues.length;
+        document.getElementById("activeProblems").textContent = issues.length;
+        document.getElementById("issuesSolved").textContent = 5; // example
 
-  // Load issues from Supabase
-  async function loadIssues() {
-    const { data: issues, error } = await supabase.from('issues').select('*');
-    if(error){ console.error(error); return; }
-
-    // Dashboard counts
-    document.getElementById("totalProblems").textContent = issues.length;
-    document.getElementById("activeProblems").textContent = issues.length;
-    document.getElementById("issuesSolved").textContent = 5; // example
-
-    // Populate current issues table
-    const table = document.getElementById("issuesTableBody");
-    table.innerHTML = "";
-    issues.forEach(i=>{
-      table.innerHTML += `<tr>
+        // Populate current issues table
+        const table = document.getElementById("issuesTableBody");
+        table.innerHTML = "";
+        issues.forEach((i) => {
+          table.innerHTML += `<tr>
         <td>${i.person_id}</td>
         <td>${i.problem_id}</td>
         <td>${i.datetime}</td>
@@ -140,19 +236,30 @@
         <td>${i.description}</td>
         <td><img src="${i.image_url}" alt="Issue Image"></td>
       </tr>`;
-    });
+        });
 
-    // Heatmap chart
-    const ctx = document.getElementById("heatmapChart").getContext("2d");
-    const counts = {};
-    issues.forEach(i=>{ counts[i.problem_type] = (counts[i.problem_type]||0)+1; });
-    new Chart(ctx, {
-      type: 'bar',
-      data: { labels:Object.keys(counts), datasets:[{label:"Number of Issues",data:Object.values(counts),backgroundColor:"rgba(52,152,219,0.7)"}] }
-    });
-  }
+        // Heatmap chart
+        const ctx = document.getElementById("heatmapChart").getContext("2d");
+        const counts = {};
+        issues.forEach((i) => {
+          counts[i.problem_type] = (counts[i.problem_type] || 0) + 1;
+        });
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: Object.keys(counts),
+            datasets: [
+              {
+                label: "Number of Issues",
+                data: Object.values(counts),
+                backgroundColor: "rgba(52,152,219,0.7)",
+              },
+            ],
+          },
+        });
+      }
 
-  window.onload = loadIssues;
-</script>
-</body>
+      window.onload = loadIssues;
+    </script>
+  </body>
 </html>
