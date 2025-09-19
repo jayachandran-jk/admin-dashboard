@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Civic Issue Admin Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; display: flex; background: #f5f7fa; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: #2c3e50;
+      color: white;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      padding-top: 20px;
+    }
+    .sidebar h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar ul li {
+      padding: 15px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .sidebar ul li:hover {
+      background: #34495e;
+    }
+
+    /* Main content */
+    .main {
+      margin-left: 220px;
+      flex-grow: 1;
+      padding: 20px;
+    }
+
+    header {
+      background: #3498db;
+      color: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .dashboard {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .card {
+      background: #fff;
+      padding: 20px;
+      width: 30%;
+      text-align: center;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .heatmap, table {
+      margin-top: 20px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th { background: #3498db; color: #fff; }
+    img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; }
+    button { padding: 5px 10px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #2ecc71; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+<div class="sidebar">
+  <h2>Admin</h2>
+  <ul>
+    <li onclick="showSection('dashboard')">Dashboard</li>
+    <li onclick="showSection('users')">Users</li>
+    <li onclick="showSection('reports')">Report</li>
+    <li onclick="showSection('settings')">Settings</li>
+    <li onclick="logout()">Logout</li>
+  </ul>
+</div>
+
+
+  <!-- Main Content -->
+  <div class="main">
+    <header>
+      <h1>Civic Issue Reporting - Admin Dashboard</h1>
+    </header>
+
+    <!-- Dashboard Section -->
+    <section id="dashboardSection">
+      <div class="dashboard">
+        <div class="card">
+          <h2>Total Problems Filed</h2>
+          <p id="totalProblems">0</p>
+        </div>
+        <div class="card">
+          <h2>Active Problems</h2>
+          <p id="activeProblems">0</p>
+        </div>
+        <div class="card">
+          <h2>Issues Solved</h2>
+          <p id="issuesSolved">0</p>
+        </div>
+      </div>
+
+      <div class="heatmap">
+        <h2>Heatmap of Reported Issues</h2>
+        <canvas id="heatmapChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Current Issues Section -->
+    <section id="currentSection" style="display:none;">
+      <h2>Current Issues</h2>
+      <table id="issuesTable">
+        <thead>
+          <tr>
+            <th>Person ID</th>
+            <th>Problem ID</th>
+            <th>Date/Time</th>
+            <th>Location</th>
+            <th>Problem Type</th>
+            <th>Urgency</th>
+            <th>Description</th>
+            <th>Image</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Resolved Issues Section -->
+    <section id="resolvedSection" style="display:none;">
+      <h2>Resolved Issues (History)</h2>
+      <p>Coming Soon: This will list all resolved civic issues.</p>
+    </section>
+
+    <!-- Reports Section -->
+    <section id="reportsSection" style="display:none;">
+      <h2>Reports</h2>
+      <p>Coming Soon: Admin can generate reports here.</p>
+    </section>
+
+    <!-- Settings Section -->
+    <section id="settingsSection" style="display:none;">
+      <h2>Settings</h2>
+      <p>Coming Soon: Configure portal preferences.</p>
+    </section>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    function showSection(section) {
+      document.getElementById("dashboardSection").style.display = "none";
+      document.getElementById("currentSection").style.display = "none";
+      document.getElementById("resolvedSection").style.display = "none";
+      document.getElementById("reportsSection").style.display = "none";
+      document.getElementById("settingsSection").style.display = "none";
+      document.getElementById(section + "Section").style.display = "block";
+    }
+
+    function logout() {
+      alert("Logging out...");
+      // redirect to login page later
+    }
+
+    async function loadIssues() {
+      try {
+        const response = await fetch("http://localhost/civic_admin/get_issues.php");
+        const issues = await response.json();
+
+        document.getElementById("totalProblems").textContent = issues.length;
+        document.getElementById("activeProblems").textContent = issues.length;
+        document.getElementById("issuesSolved").textContent = 5; // replace later
+
+        const tableBody = document.querySelector("#issuesTable tbody");
+        tableBody.innerHTML = "";
+        issues.forEach(issue => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${issue.person_id}</td>
+            <td>${issue.problem_id}</td>
+            <td>${issue.datetime}</td>
+            <td>${issue.location}</td>
+            <td>${issue.problem_type}</td>
+            <td>${issue.urgency_level}</td>
+            <td>${issue.description}</td>
+            <td><img src="${issue.image_url}" alt="Issue Image"></td>
+            <td><button onclick="resolveIssue(${issue.problem_id})">Resolve</button></td>
+          `;
+          tableBody.appendChild(row);
+        });
+
+        const ctx = document.getElementById("heatmapChart").getContext("2d");
+        const typeCounts = {};
+        issues.forEach(i => {
+          typeCounts[i.problem_type] = (typeCounts[i.problem_type] || 0) + 1;
+        });
+
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(typeCounts),
+            datasets: [{
+              label: "Number of Issues",
+              data: Object.values(typeCounts),
+              backgroundColor: "rgba(52, 152, 219, 0.7)"
+            }]
+          }
+        });
+
+      } catch (err) {
+        console.error("Error loading issues:", err);
+      }
+    }
+
+    async function resolveIssue(problemId) {
+      await fetch("http://localhost/civic_admin/resolve_issue.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ problem_id: problemId })
+      });
+      loadIssues();
+    }
+
+    loadIssues();
+  </script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+<script>
+  // Replace with your Supabase info
+  const SUPABASE_URL = "https://nnguxuuoxsrxadniklus.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZ3V4dXVveHNyeGFkbmlrbHVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMzMxNzQsImV4cCI6MjA3MzgwOTE3NH0.lKDEDRfsUqPq9vS9p4MooIMJyWZYDWaHlzpWMtXNCNI";
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function loadIssues() {
+    let { data: issues, error } = await supabase
+      .from('issues')
+      .select('*');
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    // Show total problems
+    document.getElementById("totalProblems").textContent = issues.length;
+
+    // Example: print all issues
+    let table = document.getElementById("issuesTableBody");
+    table.innerHTML = "";
+    issues.forEach(issue => {
+      let row = `<tr>
+        <td>${issue.person_id}</td>
+        <td>${issue.problem_id}</td>
+        <td>${issue.datetime}</td>
+        <td>${issue.location}</td>
+        <td>${issue.problem_type}</td>
+        <td>${issue.urgency_level}</td>
+        <td>${issue.description}</td>
+        <td><img src="${issue.image_url}" width="50"></td>
+      </tr>`;
+      table.innerHTML += row;
+    });
+  }
+
+  // Call function when page loads
+  window.onload = loadIssues;
+</script>
+
+</body>
+</html>
