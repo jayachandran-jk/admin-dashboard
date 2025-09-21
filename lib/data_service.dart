@@ -5,7 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class DataService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  List<Map<String, dynamic>> _data = [];
+  List<Map<String, dynamic>> _rawData = [];   // all clustered issues
+  List<Map<String, dynamic>> _filteredData = []; // data after applying filters
   bool _isLoading = false;
   String? _error;
 
@@ -19,17 +20,17 @@ class DataService extends ChangeNotifier {
   DateTime? endDate;
 
   // Convenience getters
-  List<Map<String, dynamic>> get data => _data;
+  List<Map<String, dynamic>> get data => _filteredData;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Unique values for filter lists
+  // Unique values for dropdowns (from raw data)
   List<String> get allTypes => _unique('issue_type');
   List<String> get allDepartments => _unique('department');
   List<String> get allUsers => _unique('user_id');
   List<String> get allLocations => _unique('address');
 
-  // ------------------- Fetch data (always fresh) -------------------
+  // ------------------- Fetch & Cluster -------------------
   Future<void> fetchData() async {
     _isLoading = true;
     _error = null;
@@ -55,16 +56,16 @@ class DataService extends ChangeNotifier {
         };
       }).toList();
 
-      // ---------------- Clustering ----------------
-      const double proximityThresholdMeters = 50; // cluster if within 50m
+      // -------- Clustering --------
+      const double proximityThresholdMeters = 50;
       List<Map<String, dynamic>> clusters = [];
 
       for (var issue in allIssues) {
         bool added = false;
-
         for (var cluster in clusters) {
           if (cluster['issue_type'] == issue['issue_type'] &&
-              _distanceMeters(cluster['latitude'], cluster['longitude'],
+              _distanceMeters(
+                      cluster['latitude'], cluster['longitude'],
                       issue['latitude'], issue['longitude']) <=
                   proximityThresholdMeters) {
             cluster['count'] += 1;
@@ -73,7 +74,6 @@ class DataService extends ChangeNotifier {
             break;
           }
         }
-
         if (!added) {
           clusters.add({
             'issue_type': issue['issue_type'],
@@ -92,7 +92,8 @@ class DataService extends ChangeNotifier {
         }
       }
 
-      _data = clusters;
+      _rawData = clusters;
+      _applyFilters();   // <-- immediately apply current filters
     } catch (e) {
       _error = e.toString();
     }
@@ -112,37 +113,10 @@ class DataService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Status update failed: $e');
     }
-
-    // Refresh data after status update
     await fetchData();
   }
 
   // ------------------- Filters -------------------
-  List<Map<String, dynamic>> applyFilters() {
-    final filtered = _data.where((issue) {
-      final t = selectedTypes.isEmpty || selectedTypes.contains(issue['issue_type']);
-      final d = selectedDepartments.isEmpty || selectedDepartments.contains(issue['department']);
-      final u = selectedUserIds.isEmpty || selectedUserIds.contains(issue['user_id']);
-      final l = selectedLocations.isEmpty ||
-          selectedLocations.any((loc) =>
-              (issue['address'] as String).toLowerCase().contains(loc.toLowerCase()));
-      final urg = selectedUrgencies.isEmpty || selectedUrgencies.contains(issue['urgency']);
-      bool dateOK = true;
-      if (startDate != null || endDate != null) {
-        try {
-          final issueDate = DateTime.tryParse(issue['reported_date'] ?? '');
-          if (issueDate == null) return false;
-          if (startDate != null && issueDate.isBefore(startDate!)) dateOK = false;
-          if (endDate != null && issueDate.isAfter(endDate!)) dateOK = false;
-        } catch (_) {
-          dateOK = false;
-        }
-      }
-      return t && d && u && l && urg && dateOK;
-    }).toList();
-    return filtered;
-  }
-
   void updateFilters(
     List<String> types,
     List<String> depts,
@@ -159,6 +133,7 @@ class DataService extends ChangeNotifier {
     selectedUrgencies = urgencies;
     startDate = start;
     endDate = end;
+    _applyFilters();
     notifyListeners();
   }
 
@@ -170,7 +145,29 @@ class DataService extends ChangeNotifier {
     selectedUrgencies.clear();
     startDate = null;
     endDate = null;
+    _applyFilters();
     notifyListeners();
+  }
+
+  void _applyFilters() {
+    _filteredData = _rawData.where((issue) {
+      final t = selectedTypes.isEmpty || selectedTypes.contains(issue['issue_type']);
+      final d = selectedDepartments.isEmpty || selectedDepartments.contains(issue['department']);
+      final u = selectedUserIds.isEmpty || selectedUserIds.contains(issue['user_id']);
+      final l = selectedLocations.isEmpty ||
+          selectedLocations.any((loc) =>
+              (issue['address'] as String).toLowerCase().contains(loc.toLowerCase()));
+      final urg = selectedUrgencies.isEmpty || selectedUrgencies.contains(issue['urgency']);
+
+      bool dateOK = true;
+      if (startDate != null || endDate != null) {
+        final issueDate = DateTime.tryParse(issue['reported_date'] ?? '');
+        if (issueDate == null) return false;
+        if (startDate != null && issueDate.isBefore(startDate!)) dateOK = false;
+        if (endDate != null && issueDate.isAfter(endDate!)) dateOK = false;
+      }
+      return t && d && u && l && urg && dateOK;
+    }).toList();
   }
 
   // ------------------- Sorting -------------------
@@ -180,12 +177,12 @@ class DataService extends ChangeNotifier {
             .compareTo(DateTime.tryParse(a['reported_date'] ?? '') ?? DateTime.now());
 
     if (type == 'Latest') {
-      _data.sort(compareDate);
+      _filteredData.sort(compareDate);
     } else if (type == 'Oldest') {
-      _data.sort((a, b) => compareDate(b, a));
+      _filteredData.sort((a, b) => compareDate(b, a));
     } else if (type == 'Priority') {
       const priorityOrder = {'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4};
-      _data.sort((a, b) {
+      _filteredData.sort((a, b) {
         final pa = priorityOrder[(a['urgency'] ?? 'Medium').toString()] ?? 2;
         final pb = priorityOrder[(b['urgency'] ?? 'Medium').toString()] ?? 2;
         return pb.compareTo(pa);
@@ -196,20 +193,18 @@ class DataService extends ChangeNotifier {
 
   // ------------------- Helpers -------------------
   List<String> _unique(String field) =>
-      _data.map((e) => e[field]?.toString() ?? '')
+      _rawData.map((e) => e[field]?.toString() ?? '')
           .where((e) => e.isNotEmpty)
           .toSet()
           .toList();
 
   double _distanceMeters(double lat1, double lon1, double lat2, double lon2) {
-    const double R = 6371000; // Earth radius in meters
+    const double R = 6371000; // meters
     final dLat = _deg2rad(lat2 - lat1);
     final dLon = _deg2rad(lon2 - lon1);
     final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_deg2rad(lat1)) *
-            cos(_deg2rad(lat2)) *
-            sin(dLon / 2) *
-            sin(dLon / 2);
+        cos(_deg2rad(lat1)) * cos(_deg2rad(lat2)) *
+        sin(dLon / 2) * sin(dLon / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return R * c;
   }

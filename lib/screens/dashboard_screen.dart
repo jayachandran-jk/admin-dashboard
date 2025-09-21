@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+
 import '../auth_service.dart';
 import '../data_service.dart';
 
@@ -60,16 +61,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Sidebar
+                // ===== Sidebar =====
                 Container(
                   width: 180,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(2, 2)),
-                    ],
+                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(2, 2))],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,19 +95,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),
 
                 const SizedBox(width: 16),
 
-                // Main Content
+                // ===== Main Content =====
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Row: Clustered Count + Refresh + Sort + Filter
+                      // Top row: cluster count + refresh + sort + filter
                       Row(
                         children: [
                           Expanded(
@@ -153,12 +152,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
+
+                      // ===== Issue List =====
                       Expanded(
                         child: ListView.builder(
                           itemCount: ds.data.length,
                           itemBuilder: (_, i) {
                             final issue = ds.data[i];
-                            double priorityScore = _calculatePriorityScore(issue);
+                            final priorityScore = _calculatePriorityScore(issue);
 
                             return Card(
                               margin: const EdgeInsets.symmetric(vertical: 6),
@@ -224,9 +225,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           },
                                         ),
                                         const SizedBox(height: 4),
+                                        // 🔴 Dynamic Aging Priority %
                                         Text(
                                           '${priorityScore.toStringAsFixed(2)}%',
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.redAccent),
                                         ),
                                       ],
                                     ),
@@ -248,6 +253,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // ===== Helpers =====
+
   double _calculatePriorityScore(Map<String, dynamic> issue) {
     final baseScores = {'low': 10.0, 'medium': 15.0, 'high': 25.0, 'critical': 40.0};
     final urgency = (issue['urgency'] ?? 'medium').toString().toLowerCase();
@@ -258,7 +265,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final reported = DateTime.tryParse(issue['reported_date'] ?? '');
       if (reported != null) {
         final daysOld = DateTime.now().difference(reported).inDays;
-        double ageFactor = (daysOld / 7) * 2.5;
+        double ageFactor = (daysOld / 7) * 2.5; // 2.5% per week
         if (ageFactor > 30) ageFactor = 30;
         score += ageFactor;
       }
@@ -267,16 +274,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Status factor
     if ((issue['status'] ?? '').toString().toLowerCase() == 'reported') score += 10.0;
 
-    // Dynamic report count factor (1-5%)
+    // Dynamic report count factor (1–5%)
     final count = (issue['count'] as int?) ?? 1;
-    final reportFactorPercent = (min(count, 50) / 50) * 5; 
+    final reportFactorPercent = (min(count, 50) / 50) * 5;
     score += score * (reportFactorPercent / 100);
 
-    // Clamp 0-100
-    if (score > 100) score = 100;
-    if (score < 0) score = 0;
-
-    return double.parse(score.toStringAsFixed(2));
+    // Clamp
+    return score.clamp(0, 100);
   }
 
   void _sortData(DataService ds, String value) {
@@ -286,7 +290,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ds.data.sort((a, b) => _calculatePriorityScore(a).compareTo(_calculatePriorityScore(b)));
     } else if (value == 'Priority') {
       ds.data.sort((a, b) {
-        final baseScores = {'low': 10, 'medium': 15, 'high': 25, 'critical': 40};
+        const baseScores = {'low': 10, 'medium': 15, 'high': 25, 'critical': 40};
         final aScore = baseScores[(a['urgency'] ?? 'medium').toString().toLowerCase()] ?? 0;
         final bScore = baseScores[(b['urgency'] ?? 'medium').toString().toLowerCase()] ?? 0;
         return bScore.compareTo(aScore);
@@ -434,13 +438,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   start = null;
                   end = null;
                 });
-                setState(() { ds.resetFilters(); });
+                setState(() => ds.resetFilters());
               },
               child: const Text('Reset Filters', style: TextStyle(color: Colors.red)),
             ),
             ElevatedButton(
               onPressed: () {
-                setState(() { ds.updateFilters(types, depts, users, locs, start, end, urgencies); });
+                setState(() => ds.updateFilters(types, depts, users, locs, start, end, urgencies));
                 Navigator.pop(context);
               },
               child: const Text('Apply'),
