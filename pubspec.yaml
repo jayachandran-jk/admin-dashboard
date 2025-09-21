@@ -19,7 +19,7 @@ dependencies:
   provider: ^6.1.1
   flutter_web_plugins:
     sdk: flutter
-
+  intl: ^0.18.1   # <-- Added intl for DateFormat
 
 dev_dependencies:
   flutter_test:
