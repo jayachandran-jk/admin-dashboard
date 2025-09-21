@@ -8,22 +8,19 @@ import 'screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
- await Firebase.initializeApp(
-  options: const FirebaseOptions(
-    apiKey: "AIzaSyC_WZgd5rptD8s0-9UctRM2WmwRXsfI374",
-    authDomain: "civichero-480a3.firebaseapp.com",
-    databaseURL: "https://civichero-480a3-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "civichero-480a3",
-    storageBucket: "civichero-480a3.firebasestorage.app",
-    messagingSenderId: "727957080527",
-    appId: "1:727957080527:web:4c113159d36a3f0540eaba",
-  ),
-);
 
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "AIzaSyC_WZgd5rptD8s0-9UctRM2WmwRXsfI374",
+      authDomain: "civichero-480a3.firebaseapp.com",
+      databaseURL: "https://civichero-480a3-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "civichero-480a3",
+      storageBucket: "civichero-480a3.firebasestorage.app",
+      messagingSenderId: "727957080527",
+      appId: "1:727957080527:web:4c113159d36a3f0540eaba",
+    ),
+  );
 
-  
   runApp(const MyApp());
 }
 
@@ -57,17 +54,11 @@ class AuthWrapper extends StatelessWidget {
     return Consumer<AuthService>(
       builder: (context, authService, child) {
         if (authService.isLoading) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        
         if (authService.user != null) {
           return const DashboardScreen();
         }
-        
         return const LoginScreen();
       },
     );

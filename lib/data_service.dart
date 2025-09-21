@@ -8,14 +8,23 @@ class DataService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<Map<String, dynamic>> _data = [];
+  List<Map<String, dynamic>> _filteredData = [];
   bool _isLoading = false;
   String? _error;
 
   // Issue counts by status
   Map<String, int> _issueCounts = {};
 
+  // Filters
+  List<String> selectedTypes = [];
+  List<String> selectedDepartments = [];
+  List<String> selectedUserIds = [];
+  List<String> selectedLocations = [];
+  DateTime? startDate;
+  DateTime? endDate;
+
   // Getters
-  List<Map<String, dynamic>> get data => _data;
+  List<Map<String, dynamic>> get data => _filteredData.isEmpty ? _data : _filteredData;
   bool get isLoading => _isLoading;
   String? get error => _error;
   Map<String, int> get issueCounts => _issueCounts;
@@ -38,12 +47,10 @@ class DataService extends ChangeNotifier {
         final lat = d['latitude']?.toString() ?? '0.0';
         final lng = d['longitude']?.toString() ?? '0.0';
 
-        // Unique key for clustering
         final key = "$issueType-$lat-$lng";
 
         if (grouped.containsKey(key)) {
           grouped[key]!['count'] += 1;
-          // ✅ store full document path for batch updates
           grouped[key]!['ids'].add(doc.reference.path);
         } else {
           grouped[key] = {
@@ -54,18 +61,20 @@ class DataService extends ChangeNotifier {
             'description': d['description'] ?? '',
             'status': d['status'] ?? 'Pending',
             'urgency': d['urgency'] ?? 'Medium',
+            'reported_date': d['reported_date'] ?? '',
+            'user_id': d['user_id'] ?? '',
+            'department': d['department'] ?? '',
             'count': 1,
-            // ✅ use full path instead of doc.id
             'ids': [doc.reference.path],
           };
         }
       }
 
-      // Update data list
       _data = grouped.values.toList();
-
-      // Update global unique issue count
       uniqueIssueCount = _data.length;
+
+      // Apply filters if any
+      applyFilters();
 
       _isLoading = false;
       notifyListeners();
@@ -74,6 +83,41 @@ class DataService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Apply selected filters
+  void applyFilters() {
+    _filteredData = _data.where((issue) {
+      final typeMatch = selectedTypes.isEmpty || selectedTypes.contains(issue['issue_type']);
+      final deptMatch = selectedDepartments.isEmpty || selectedDepartments.contains(issue['department']);
+      final userMatch = selectedUserIds.isEmpty || selectedUserIds.contains(issue['user_id']);
+      final locMatch = selectedLocations.isEmpty || selectedLocations.any((loc) => (issue['address'] as String).toLowerCase().contains(loc.toLowerCase()));
+
+      bool dateMatch = true;
+      if (startDate != null || endDate != null) {
+        try {
+          final issueDate = DateTime.parse(issue['reported_date']);
+          if (startDate != null && issueDate.isBefore(startDate!)) dateMatch = false;
+          if (endDate != null && issueDate.isAfter(endDate!)) dateMatch = false;
+        } catch (_) {
+          dateMatch = false;
+        }
+      }
+
+      return typeMatch && deptMatch && userMatch && locMatch && dateMatch;
+    }).toList();
+  }
+
+  /// Reset all filters
+  void resetFilters() {
+    selectedTypes.clear();
+    selectedDepartments.clear();
+    selectedUserIds.clear();
+    selectedLocations.clear();
+    startDate = null;
+    endDate = null;
+    applyFilters();
+    notifyListeners();
   }
 
   /// Stream issue counts by status in real-time
@@ -93,12 +137,9 @@ class DataService extends ChangeNotifier {
   Future<void> updateIssueStatus(List<String> docPaths, String newStatus) async {
     try {
       final batch = _firestore.batch();
-
-      // 🔑 docPaths now contain FULL Firestore paths
       for (final path in docPaths) {
         batch.update(_firestore.doc(path), {'status': newStatus});
       }
-
       await batch.commit();
       await fetchData(); // refresh local cache after update
     } catch (e) {
