@@ -31,36 +31,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => DataService()),
+        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
+        ChangeNotifierProvider<DataService>(create: (_) => DataService()),
       ],
       child: MaterialApp(
-        title: 'Admin Flutter App',
+        title: 'CivicHero Admin',
         theme: ThemeData(
           primarySwatch: Colors.blue,
           useMaterial3: true,
         ),
-        home: const AuthWrapper(),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const LoginScreen(),
+          '/dashboard': (context) => const DashboardScreen(),
+        },
       ),
-    );
-  }
-}
-
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AuthService>(
-      builder: (context, authService, child) {
-        if (authService.isLoading) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-        if (authService.user != null) {
-          return const DashboardScreen();
-        }
-        return const LoginScreen();
-      },
     );
   }
 }
